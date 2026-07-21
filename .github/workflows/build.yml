@@ -24,10 +24,12 @@ jobs:
           flutter-version: '3.19.6'
           channel: 'stable'
 
-      - name: Re-create Android Platform
+      - name: Re-create Android Platform & Set MinSDK
         run: |
           rm -rf android
           flutter create --platforms=android --project-name=geli_wonder .
+          sed -i 's/minSdkVersion .*/minSdkVersion 21/' android/app/build.gradle || true
+          sed -i 's/flutter.minSdkVersion/21/' android/app/build.gradle || true
 
       - name: Install Dependencies
         run: flutter pub get
