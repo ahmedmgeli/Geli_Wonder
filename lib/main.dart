@@ -18,7 +18,7 @@ class JellyWonderApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'جلي التحول العجيب Pro',
+      title: 'دفتر جلي Pro - المحول الذكي',
       debugShowCheckedModeBanner: false,
       locale: const Locale('ar', 'SA'),
       supportedLocales: const [Locale('ar', 'SA'), Locale('en', 'US')],
@@ -49,7 +49,7 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
   String _outputFormat = 'xlsx';
   bool _isProcessing = false;
   double _progressValue = 0.0;
-  String _statusMessage = "جاهز ومستعد للتحويل...";
+  String _statusMessage = "جاهز ومستعد للتحويل الذكي...";
 
   Future<void> _pickFile() async {
     try {
@@ -61,7 +61,7 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
       if (result != null && result.files.single.path != null) {
         String originalPath = result.files.single.path!;
         
-        // 🔧 نسخ الملف إلى مجلد التخزين المؤقت لضمان الوصول إلى مساره المباشر
+        // نسخ الملف لمجلد مؤقت مضاعفةً للاعتمادية وعدم فقدان المسار
         Directory tempDir = await getTemporaryDirectory();
         String fileName = result.files.single.name;
         File localFile = File('${tempDir.path}/$fileName');
@@ -70,9 +70,7 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
         String ext = fileName.split('.').last.toLowerCase();
         setState(() {
           _selectedFilePath = localFile.path;
-          if (['png', 'jpg', 'jpeg'].contains(ext)) {
-            _useOcr = true;
-          }
+          _useOcr = ['png', 'jpg', 'jpeg'].contains(ext);
         });
       }
     } catch (e) {
@@ -80,47 +78,54 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
     }
   }
 
+  // تنظيف وتنسيق الكلمات العربية والإنجليزية
   String _cleanText(String text) {
-    return text.replaceAll(RegExp(r'\s+'), ' ').trim();
+    return text.replaceAll(RegExp(r'[\r\n]+'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
   }
 
   Future<void> _startConversion() async {
     if (_selectedFilePath == null || !File(_selectedFilePath!).existsSync()) {
-      _showMessage("يرجى اختيار ملف PDF أو صورة بشكل صحيح أولاً!");
+      _showMessage("يرجى اختيار ملف PDF أو صورة أولاً!");
       return;
     }
 
     setState(() {
       _isProcessing = true;
       _progressValue = 0.20;
-      _statusMessage = "جاري القراءة والمعالجة بالمحرك الذكي الفائق...";
+      _statusMessage = "جاري التفكيك والتحليل الذكي للترتيب...";
     });
 
     try {
       List<List<String>> extractedData = [];
       String ext = _selectedFilePath!.split('.').last.toLowerCase();
+      bool isImage = ['png', 'jpg', 'jpeg'].contains(ext);
 
-      if (_useOcr || ['png', 'jpg', 'jpeg'].contains(ext)) {
-        extractedData = await _processOCRUltra(_selectedFilePath!);
+      if (isImage || _useOcr) {
+        if (isImage) {
+          extractedData = await _processOCRUltra(_selectedFilePath!);
+        } else {
+          // التعامل مع ملف PDF عند تفعيل OCR
+          extractedData = await _processPdfSmart(_selectedFilePath!);
+          if (extractedData.isEmpty) {
+            extractedData = await _processOCRUltra(_selectedFilePath!);
+          }
+        }
       } else {
         extractedData = await _processPdfSmart(_selectedFilePath!);
-        if (extractedData.isEmpty) {
-          extractedData = await _processOCRUltra(_selectedFilePath!);
-        }
       }
 
       if (extractedData.isEmpty) {
-        throw Exception("لم نتمكن من استخراج بيانات واضحة من هذا الملف.");
+        throw Exception("لم نتمكن من استخراج بيانات واضحة. تأكد من وضوح الصورة أو محتوى الملف.");
       }
 
       setState(() {
         _progressValue = 0.75;
-        _statusMessage = "جاري صياغة الجداول وتنسيق الملف بشكل احترافي...";
+        _statusMessage = "جاري إنشاء وتنسيق الأعمدة بالجودة العالية...";
       });
 
       Directory? dir = await getExternalStorageDirectory() ?? await getApplicationDocumentsDirectory();
       String nameWithoutExt = _selectedFilePath!.split('/').last.split('.').first;
-      String outputPath = "${dir.path}/${nameWithoutExt}_جلي_Pro.$_outputFormat";
+      String outputPath = "${dir.path}/${nameWithoutExt}_دفتر_جلي.$_outputFormat";
 
       if (_outputFormat == 'xlsx') {
         await _saveExcel(extractedData, outputPath);
@@ -130,7 +135,7 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
 
       setState(() {
         _progressValue = 1.0;
-        _statusMessage = "تم التفكيك والتحويل بنجاح وسرعة!";
+        _statusMessage = "تم التحويل بنجاح وبدقة عالية!";
         _isProcessing = false;
       });
 
@@ -145,6 +150,7 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
     }
   }
 
+  // محرك قراءة الـ PDF الذكي للجداول
   Future<List<List<String>>> _processPdfSmart(String path) async {
     List<List<String>> rows = [];
     File file = File(path);
@@ -157,7 +163,9 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
       for (String line in lines) {
         String clean = _cleanText(line);
         if (clean.isNotEmpty) {
-          rows.add(clean.split(RegExp(r'\t|\s{2,}')));
+          // الفصل الذكي للأعمدة اعتماداً على الفواصل الكبيرة والمحاذاة
+          List<String> columns = clean.split(RegExp(r'\t|\s{2,}'));
+          rows.add(columns);
         }
       }
     }
@@ -165,11 +173,11 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
     return rows;
   }
 
+  // محرك OCR الخارق مع ترتيب المواقع والمحاذاة (عربي + إنجليزي)
   Future<List<List<String>>> _processOCRUltra(String path) async {
     List<List<String>> rows = [];
     final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
     
-    // استخدام InputImage المعتمد على المسار المحلي المؤكد
     final inputImage = InputImage.fromFilePath(path);
     final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
 
@@ -185,26 +193,38 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
       return rows;
     }
 
+    // ترتيب العناصر رأسياً (حسب ارتفاع السطر)
     elements.sort((a, b) => a.boundingBox.top.compareTo(b.boundingBox.top));
 
     List<List<TextElement>> lineGroups = [];
     double currentTop = -1;
     List<TextElement> currentGroup = [];
 
+    // خوارزمية تجميع الكلمات المتقاربة في نفس السطر الفعلي
     for (var el in elements) {
-      if (currentTop == -1 || (el.boundingBox.top - currentTop).abs() < 14) {
+      if (currentTop == -1 || (el.boundingBox.top - currentTop).abs() < 12) {
         currentGroup.add(el);
-        currentTop = el.boundingBox.top;
+        if (currentTop == -1) currentTop = el.boundingBox.top.toDouble();
       } else {
         lineGroups.add(List.from(currentGroup));
         currentGroup = [el];
-        currentTop = el.boundingBox.top;
+        currentTop = el.boundingBox.top.toDouble();
       }
     }
     if (currentGroup.isNotEmpty) lineGroups.add(currentGroup);
 
+    // ترتيب السطر أفقياً ليدعم العربية والإنجليزي بنفس التنسيق
     for (var line in lineGroups) {
-      line.sort((a, b) => b.boundingBox.left.compareTo(a.boundingBox.left));
+      bool isArabicLine = line.any((e) => RegExp(r'[\u0600-\u06FF]').hasMatch(e.text));
+      
+      if (isArabicLine) {
+        // الاتجاه العربي: من اليمين إلى اليسار
+        line.sort((a, b) => b.boundingBox.left.compareTo(a.boundingBox.left));
+      } else {
+        // الاتجاه الإنجليزي: من اليسار إلى اليمين
+        line.sort((a, b) => a.boundingBox.left.compareTo(b.boundingBox.left));
+      }
+
       List<String> rowText = line.map((e) => _cleanText(e.text)).where((t) => t.isNotEmpty).toList();
       if (rowText.isNotEmpty) {
         rows.add(rowText);
@@ -215,6 +235,7 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
     return rows;
   }
 
+  // حفظ الملف بتنسيق Excel احترافي
   Future<void> _saveExcel(List<List<String>> data, String path) async {
     var excel = Excel.createExcel();
     Sheet sheet = excel['Sheet1'];
@@ -230,9 +251,10 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
     }
   }
 
+  // حفظ الملف بتنسيق Word / Text منسق
   Future<void> _saveWordText(List<List<String>> data, String path) async {
     StringBuffer buffer = StringBuffer();
-    buffer.writeln("=== المستند المستخرج بواسطة جلي التحول العجيب Pro ===");
+    buffer.writeln("=== المستند المستخرج بواسطة دفتر جلي Pro ===");
     buffer.writeln();
 
     for (var row in data) {
@@ -273,7 +295,7 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
           elevation: 0,
           toolbarHeight: 70,
           title: const Text(
-            "Pro ✨ جلي التحول العجيب",
+            "دفتر جلي Pro ✨",
             style: TextStyle(
               color: Colors.white,
               fontSize: 22,
@@ -288,7 +310,7 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Text(
-                "المعالج الهجين الذكي لتقارير الـ PDF المعقدة والبنكية\nوصور الجداول",
+                "المعالج الذكي لتحويل وتقسيم الجداول\n(دعم كامل للغة العربية والإنجليزية)",
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Color(0xFF27AE60),
@@ -299,7 +321,7 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
               ),
               const SizedBox(height: 18),
 
-              // بطاقة اختيار الملف
+              // اختيار الملف
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -360,7 +382,7 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
               ),
               const SizedBox(height: 14),
 
-              // بطاقة زر OCR
+              // زر الـ OCR
               AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -371,15 +393,6 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
                     color: _useOcr ? const Color(0xFFE67E22) : Colors.transparent,
                     width: 2,
                   ),
-                  boxShadow: _useOcr
-                      ? [
-                          BoxShadow(
-                            color: const Color(0xFFE67E22).withOpacity(0.2),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
-                          )
-                        ]
-                      : [],
                 ),
                 child: Row(
                   children: [
@@ -426,8 +439,8 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
                           const SizedBox(height: 2),
                           Text(
                             _useOcr
-                                ? "مُفعل حالياً للتعرف الفائق على الصور والصفحات الممسوحة"
-                                : "اضغط للتعرف على النصوص من الصور المستندية",
+                                ? "مُفعل تلقائياً للصور المستندية الممسوحة ضوئياً"
+                                : "يتم الاعتماد على قراءة النصوص الذكية",
                             style: TextStyle(
                               fontSize: 11,
                               color: _useOcr ? const Color(0xFFE67E22) : Colors.grey.shade600,
@@ -441,7 +454,7 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
               ),
               const SizedBox(height: 14),
 
-              // بطاقة صيغة الملف
+              // اختيار صيغة الملف
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
