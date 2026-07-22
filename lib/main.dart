@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
-import 'package:excel/excel.dart' hide Border; // 👈 تم حل التعارض هنا
+import 'package:excel/excel.dart' hide Border;
 import 'package:path_provider/path_provider.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 
@@ -59,10 +59,17 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
       );
 
       if (result != null && result.files.single.path != null) {
-        String path = result.files.single.path!;
-        String ext = path.split('.').last.toLowerCase();
+        String originalPath = result.files.single.path!;
+        
+        // 🔧 نسخ الملف إلى مجلد التخزين المؤقت لضمان الوصول إلى مساره المباشر
+        Directory tempDir = await getTemporaryDirectory();
+        String fileName = result.files.single.name;
+        File localFile = File('${tempDir.path}/$fileName');
+        await File(originalPath).copy(localFile.path);
+
+        String ext = fileName.split('.').last.toLowerCase();
         setState(() {
-          _selectedFilePath = path;
+          _selectedFilePath = localFile.path;
           if (['png', 'jpg', 'jpeg'].contains(ext)) {
             _useOcr = true;
           }
@@ -78,8 +85,8 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
   }
 
   Future<void> _startConversion() async {
-    if (_selectedFilePath == null) {
-      _showMessage("يرجى اختيار ملف PDF أو صورة أولاً!");
+    if (_selectedFilePath == null || !File(_selectedFilePath!).existsSync()) {
+      _showMessage("يرجى اختيار ملف PDF أو صورة بشكل صحيح أولاً!");
       return;
     }
 
@@ -161,6 +168,8 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
   Future<List<List<String>>> _processOCRUltra(String path) async {
     List<List<String>> rows = [];
     final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+    
+    // استخدام InputImage المعتمد على المسار المحلي المؤكد
     final inputImage = InputImage.fromFilePath(path);
     final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
 
