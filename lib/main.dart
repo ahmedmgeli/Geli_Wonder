@@ -18,7 +18,7 @@ class JellyWonderApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'دفتر جلي Pro - المحول الذكي',
+      title: 'جلي للتحول العجيب Pro',
       debugShowCheckedModeBanner: false,
       locale: const Locale('ar', 'SA'),
       supportedLocales: const [Locale('ar', 'SA'), Locale('en', 'US')],
@@ -61,7 +61,7 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
       if (result != null && result.files.single.path != null) {
         String originalPath = result.files.single.path!;
         
-        // نسخ الملف لمجلد مؤقت مضاعفةً للاعتمادية وعدم فقدان المسار
+        // نسخ الملف لمجلد مؤقت لضمان الوصول المباشر
         Directory tempDir = await getTemporaryDirectory();
         String fileName = result.files.single.name;
         File localFile = File('${tempDir.path}/$fileName');
@@ -78,7 +78,7 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
     }
   }
 
-  // تنظيف وتنسيق الكلمات العربية والإنجليزية
+  // تنظيف وتنسيق النصوص للغتين
   String _cleanText(String text) {
     return text.replaceAll(RegExp(r'[\r\n]+'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
   }
@@ -104,7 +104,7 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
         if (isImage) {
           extractedData = await _processOCRUltra(_selectedFilePath!);
         } else {
-          // التعامل مع ملف PDF عند تفعيل OCR
+          // معالجة ملفات الـ PDF الممسوحة عند الحاجة
           extractedData = await _processPdfSmart(_selectedFilePath!);
           if (extractedData.isEmpty) {
             extractedData = await _processOCRUltra(_selectedFilePath!);
@@ -115,7 +115,7 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
       }
 
       if (extractedData.isEmpty) {
-        throw Exception("لم نتمكن من استخراج بيانات واضحة. تأكد من وضوح الصورة أو محتوى الملف.");
+        throw Exception("لم نتمكن من استخرج بيانات واضحة. تأكد من وضوح الصورة أو محتوى الملف.");
       }
 
       setState(() {
@@ -125,7 +125,7 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
 
       Directory? dir = await getExternalStorageDirectory() ?? await getApplicationDocumentsDirectory();
       String nameWithoutExt = _selectedFilePath!.split('/').last.split('.').first;
-      String outputPath = "${dir.path}/${nameWithoutExt}_دفتر_جلي.$_outputFormat";
+      String outputPath = "${dir.path}/${nameWithoutExt}_جلي_للتحول_العجيب.$_outputFormat";
 
       if (_outputFormat == 'xlsx') {
         await _saveExcel(extractedData, outputPath);
@@ -150,7 +150,7 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
     }
   }
 
-  // محرك قراءة الـ PDF الذكي للجداول
+  // محرك قراءة الـ PDF الذكي
   Future<List<List<String>>> _processPdfSmart(String path) async {
     List<List<String>> rows = [];
     File file = File(path);
@@ -163,7 +163,6 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
       for (String line in lines) {
         String clean = _cleanText(line);
         if (clean.isNotEmpty) {
-          // الفصل الذكي للأعمدة اعتماداً على الفواصل الكبيرة والمحاذاة
           List<String> columns = clean.split(RegExp(r'\t|\s{2,}'));
           rows.add(columns);
         }
@@ -173,7 +172,7 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
     return rows;
   }
 
-  // محرك OCR الخارق مع ترتيب المواقع والمحاذاة (عربي + إنجليزي)
+  // محرك OCR المتقدم الداعم للترتيب الذكي واللغتين
   Future<List<List<String>>> _processOCRUltra(String path) async {
     List<List<String>> rows = [];
     final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
@@ -193,14 +192,13 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
       return rows;
     }
 
-    // ترتيب العناصر رأسياً (حسب ارتفاع السطر)
+    // ترتيب العناصر رأسياً
     elements.sort((a, b) => a.boundingBox.top.compareTo(b.boundingBox.top));
 
     List<List<TextElement>> lineGroups = [];
     double currentTop = -1;
     List<TextElement> currentGroup = [];
 
-    // خوارزمية تجميع الكلمات المتقاربة في نفس السطر الفعلي
     for (var el in elements) {
       if (currentTop == -1 || (el.boundingBox.top - currentTop).abs() < 12) {
         currentGroup.add(el);
@@ -213,15 +211,13 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
     }
     if (currentGroup.isNotEmpty) lineGroups.add(currentGroup);
 
-    // ترتيب السطر أفقياً ليدعم العربية والإنجليزي بنفس التنسيق
+    // ترتيب العناصر أفقياً حسب اللغة (يمين-يسار للعربية / يسار-يمين للإنجليزية)
     for (var line in lineGroups) {
       bool isArabicLine = line.any((e) => RegExp(r'[\u0600-\u06FF]').hasMatch(e.text));
       
       if (isArabicLine) {
-        // الاتجاه العربي: من اليمين إلى اليسار
         line.sort((a, b) => b.boundingBox.left.compareTo(a.boundingBox.left));
       } else {
-        // الاتجاه الإنجليزي: من اليسار إلى اليمين
         line.sort((a, b) => a.boundingBox.left.compareTo(b.boundingBox.left));
       }
 
@@ -235,7 +231,7 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
     return rows;
   }
 
-  // حفظ الملف بتنسيق Excel احترافي
+  // حفظ الملف بتنسيق Excel
   Future<void> _saveExcel(List<List<String>> data, String path) async {
     var excel = Excel.createExcel();
     Sheet sheet = excel['Sheet1'];
@@ -251,10 +247,10 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
     }
   }
 
-  // حفظ الملف بتنسيق Word / Text منسق
+  // حفظ الملف بتنسيق Word
   Future<void> _saveWordText(List<List<String>> data, String path) async {
     StringBuffer buffer = StringBuffer();
-    buffer.writeln("=== المستند المستخرج بواسطة دفتر جلي Pro ===");
+    buffer.writeln("=== المستند المستخرج بواسطة جلي للتحول العجيب ===");
     buffer.writeln();
 
     for (var row in data) {
@@ -295,7 +291,7 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
           elevation: 0,
           toolbarHeight: 70,
           title: const Text(
-            "دفتر جلي Pro ✨",
+            "جلي للتحول العجيب Pro ✨",
             style: TextStyle(
               color: Colors.white,
               fontSize: 22,
@@ -321,7 +317,7 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
               ),
               const SizedBox(height: 18),
 
-              // اختيار الملف
+              // بطاقة اختيار الملف
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -382,79 +378,121 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
               ),
               const SizedBox(height: 14),
 
-              // زر الـ OCR
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              // 🌟 تصميم أنيق وعصري لبطاقة وزر الـ OCR
+              Container(
                 decoration: BoxDecoration(
-                  color: _useOcr ? const Color(0xFFFFF3E0) : const Color(0xFFEAEFF2),
+                  gradient: _useOcr
+                      ? const LinearGradient(
+                          colors: [Color(0xFFFFF3E0), Color(0xFFFFE0B2)],
+                          begin: Alignment.topRight,
+                          end: Alignment.bottomLeft,
+                        )
+                      : const LinearGradient(
+                          colors: [Color(0xFFEAEFF2), Color(0xFFEAEFF2)],
+                        ),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: _useOcr ? const Color(0xFFE67E22) : Colors.transparent,
-                    width: 2,
+                    color: _useOcr ? const Color(0xFFE67E22) : Colors.grey.shade300,
+                    width: 1.5,
                   ),
+                  boxShadow: _useOcr
+                      ? [
+                          BoxShadow(
+                            color: const Color(0xFFE67E22).withOpacity(0.15),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          )
+                        ]
+                      : [],
                 ),
-                child: Row(
-                  children: [
-                    Transform.scale(
-                      scale: 1.1,
-                      child: Switch(
-                        value: _useOcr,
-                        activeColor: const Color(0xFFD35400),
-                        activeTrackColor: const Color(0xFFFFCC80),
-                        inactiveThumbColor: Colors.grey.shade600,
-                        inactiveTrackColor: Colors.grey.shade300,
-                        onChanged: _isProcessing
-                            ? null
-                            : (val) {
-                                setState(() {
-                                  _useOcr = val;
-                                });
-                              },
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: _isProcessing
+                        ? null
+                        : () {
+                            setState(() {
+                              _useOcr = !_useOcr;
+                            });
+                          },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      child: Row(
                         children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.document_scanner,
-                                size: 18,
-                                color: _useOcr ? const Color(0xFFD35400) : const Color(0xFF2C3A47),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                "تفعيل قارئ الصور والمسح الضوئي (OCR)",
-                                style: TextStyle(
-                                  color: _useOcr ? const Color(0xFFD35400) : const Color(0xFF2C3A47),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ],
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: _useOcr ? const Color(0xFFE67E22) : const Color(0xFF2C3A47).withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.document_scanner_rounded,
+                              size: 22,
+                              color: _useOcr ? Colors.white : const Color(0xFF2C3A47),
+                            ),
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            _useOcr
-                                ? "مُفعل تلقائياً للصور المستندية الممسوحة ضوئياً"
-                                : "يتم الاعتماد على قراءة النصوص الذكية",
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: _useOcr ? const Color(0xFFE67E22) : Colors.grey.shade600,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      "تفعيل قارئ الصور والمسح الضوئي (OCR)",
+                                      style: TextStyle(
+                                        color: _useOcr ? const Color(0xFFD35400) : const Color(0xFF2C3A47),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13.5,
+                                      ),
+                                    ),
+                                    if (_useOcr) ...[
+                                      const SizedBox(width: 6),
+                                      const Icon(Icons.check_circle, size: 16, color: Color(0xFF27AE60)),
+                                    ]
+                                  ],
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  _useOcr
+                                      ? "مُفعل حالياً استخراج النصوص الذكي بدقة عالية"
+                                      : "انقر للتفعيل عند معالجة الصور والمستندات الممسوحة ضوئياً",
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: _useOcr ? const Color(0xFFD35400) : Colors.grey.shade600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Transform.scale(
+                            scale: 0.9,
+                            child: Switch(
+                              value: _useOcr,
+                              activeColor: const Color(0xFFD35400),
+                              activeTrackColor: const Color(0xFFFFCC80),
+                              inactiveThumbColor: Colors.grey.shade600,
+                              inactiveTrackColor: Colors.grey.shade300,
+                              onChanged: _isProcessing
+                                  ? null
+                                  : (val) {
+                                      setState(() {
+                                        _useOcr = val;
+                                      });
+                                    },
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
               ),
               const SizedBox(height: 14),
 
-              // اختيار صيغة الملف
+              // بطاقة اختيار صيغة الملف
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
