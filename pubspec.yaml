@@ -1,5 +1,5 @@
-name: jelly_wonder_converter
-description: "تطبيق جلي التحول العجيب"
+name: geli_wonder
+description: "جلي التحول العجيب Pro"
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -12,13 +12,11 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   file_picker: ^8.0.0
-  google_mlkit_text_recognition: ^0.13.0
   syncfusion_flutter_pdf: ^26.1.38
   excel: ^4.0.0
   path_provider: ^2.1.2
   permission_handler: ^11.3.1
-  pdfx: ^2.6.0
-  archive: ^3.6.1
+  google_mlkit_text_recognition: ^0.11.0
 
 dev_dependencies:
   flutter_test:
