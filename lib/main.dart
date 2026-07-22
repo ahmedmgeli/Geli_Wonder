@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
-import 'package:excel/excel.dart';
+import 'package:excel/excel.dart' hide Border; // 👈 تم حل التعارض هنا
 import 'package:path_provider/path_provider.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 
@@ -46,7 +46,7 @@ class MainConverterScreen extends StatefulWidget {
 class _MainConverterScreenState extends State<MainConverterScreen> {
   String? _selectedFilePath;
   bool _useOcr = false;
-  String _outputFormat = 'xlsx'; // 'xlsx' أو 'docx'
+  String _outputFormat = 'xlsx';
   bool _isProcessing = false;
   double _progressValue = 0.0;
   String _statusMessage = "جاهز ومستعد للتحويل...";
@@ -64,7 +64,7 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
         setState(() {
           _selectedFilePath = path;
           if (['png', 'jpg', 'jpeg'].contains(ext)) {
-            _useOcr = true; // تفعيل OCR تلقائياً للصور
+            _useOcr = true;
           }
         });
       }
@@ -138,7 +138,6 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
     }
   }
 
-  // معالجة الـ PDF الذكية
   Future<List<List<String>>> _processPdfSmart(String path) async {
     List<List<String>> rows = [];
     File file = File(path);
@@ -159,7 +158,6 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
     return rows;
   }
 
-  // محرك OCR الخارق بتجميع الإحداثيات (Spatial Clustering)
   Future<List<List<String>>> _processOCRUltra(String path) async {
     List<List<String>> rows = [];
     final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
@@ -178,7 +176,6 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
       return rows;
     }
 
-    // ترتيب العناصر رأسياً أولاً
     elements.sort((a, b) => a.boundingBox.top.compareTo(b.boundingBox.top));
 
     List<List<TextElement>> lineGroups = [];
@@ -197,7 +194,6 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
     }
     if (currentGroup.isNotEmpty) lineGroups.add(currentGroup);
 
-    // ترتيب العناصر أفقياً من اليمين لليسار للغة العربية
     for (var line in lineGroups) {
       line.sort((a, b) => b.boundingBox.left.compareTo(a.boundingBox.left));
       List<String> rowText = line.map((e) => _cleanText(e.text)).where((t) => t.isNotEmpty).toList();
@@ -355,7 +351,7 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
               ),
               const SizedBox(height: 14),
 
-              // 🔥 بطاقة زر OCR الظاهرة والأنيقة والمميزة جداً 🔥
+              // بطاقة زر OCR
               AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -378,7 +374,6 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
                 ),
                 child: Row(
                   children: [
-                    // زر التبديل الظاهر والأنيق
                     Transform.scale(
                       scale: 1.1,
                       child: Switch(
@@ -437,7 +432,7 @@ class _MainConverterScreenState extends State<MainConverterScreen> {
               ),
               const SizedBox(height: 14),
 
-              // بطاقة صيغة الملف المستخرج
+              // بطاقة صيغة الملف
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
